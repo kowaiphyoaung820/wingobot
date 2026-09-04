@@ -39,11 +39,10 @@ async def auto_prediction_worker(app: Application):
                     
                     # Sticker မလိုဘဲ သန့်ရှင်း သပ်ရပ်သော Format
                     msg = (
-                        f"⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
-                        f"📈 **MATCH** : `{current_match}`\n"
-                        f"🎁 **BUY**   : **{next_pred}**\n"
-                        f"💵 **BET**   : **{current_bet_multiplier} x**"
-                    )
+                        f⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
+                        f"🎯 𝐌𝐀𝐓𝐂𝐇  ;  `{current_match}`\n"
+                        f"📍 𝐁𝐔𝐘        ;  **{next_pred}**\n"
+                        f"💵 𝐁𝐄𝐓        ;  **{current_bet_multiplier} x**"
                     
                     for chat_id in list(active_chats):
                         try:
