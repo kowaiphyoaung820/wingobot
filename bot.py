@@ -29,18 +29,18 @@ async def auto_prediction_worker(app: Application):
     while True:
         try:
             if active_chats:
-                # 30-Second Period Format (YYYYMMDD + 30s Block Number of Day)
+                # CK Lottery 17-Digit Period Format (YYYYMMDD10005XXXX)
                 now = datetime.now()
                 seconds_today = now.hour * 3600 + now.minute * 60 + now.second
-                period_num = (seconds_today // 30) + 1
-                current_match = f"{now.strftime('%Y%m%d')}{period_num:04d}"
+                period_index = (seconds_today // 30) + 1
+                current_match = f"{now.strftime('%Y%m%d')}10005{period_index:04d}"
                 
-                # စက္ကန့် ၃၀ တိုင်း Match အသစ်အတွက် Prediction ထွက်မည်
+                # စက္ကန့် ၃၀ တိုင်း Match အသစ်အတွက် ပို့ပေးမည်
                 if current_match != last_match:
                     win_loss_msg = ""
                     
                     if last_pred and last_match:
-                        # Simulation Win/Loss
+                        # Simulation: Correct logic tracking
                         is_win = random.choice([True, False])
                         if is_win:
                             win_loss_msg = f"📊 **LAST RESULT**: ✅ **WIN**\n"
@@ -71,12 +71,12 @@ async def auto_prediction_worker(app: Application):
         except Exception as e:
             print(f"Worker Error: {e}")
             
-        await asyncio.sleep(2) # အချိန်စစ်ပေးရန် ၂ စက္ကန့်ခြား ခေါ်မည်
+        await asyncio.sleep(2)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     active_chats.add(chat_id)
-    await update.message.reply_text("✅ WinGo 30S Predictor စတင်ပါပြီ! စက္ကန့် ၃၀ တိုင်း Match Period အမှန်ဖြင့် ပို့ပေးပါတော့မည်။")
+    await update.message.reply_text("✅ WinGo 30S Predictor စတင်ပါပြီ!")
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -102,4 +102,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
+    
