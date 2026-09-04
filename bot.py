@@ -29,26 +29,26 @@ async def auto_prediction_worker(app: Application):
     while True:
         try:
             if active_chats:
-                # ရောက်ရှိနေသော အချိန်ပေါ်မူတည်၍ Match Period ပြုလုပ်ခြင်း
+                # 30-Second Period Format (YYYYMMDD + 30s Block Number of Day)
                 now = datetime.now()
-                total_seconds = now.hour * 3600 + now.minute * 60 + now.second
-                period_num = (total_seconds // 30) + 1
+                seconds_today = now.hour * 3600 + now.minute * 60 + now.second
+                period_num = (seconds_today // 30) + 1
                 current_match = f"{now.strftime('%Y%m%d')}{period_num:04d}"
                 
-                # Match အသစ်ဖြစ်ပါက Prediction ပို့မည်
+                # စက္ကန့် ၃၀ တိုင်း Match အသစ်အတွက် Prediction ထွက်မည်
                 if current_match != last_match:
-                    # ၁။ ယခင် Predict လုပ်ထားသည်ကို Win/Loss စစ်ဆေးခြင်း
                     win_loss_msg = ""
-                    if last_pred:
-                        actual_result = random.choice(["BIG", "SMALL"])
-                        if last_pred == actual_result:
-                            win_loss_msg = f"📊 **LAST RESULT**: ✅ **WIN** ({actual_result})\n"
+                    
+                    if last_pred and last_match:
+                        # Simulation Win/Loss
+                        is_win = random.choice([True, False])
+                        if is_win:
+                            win_loss_msg = f"📊 **LAST RESULT**: ✅ **WIN**\n"
                             current_bet_multiplier = 1
                         else:
-                            win_loss_msg = f"📊 **LAST RESULT**: ❌ **LOSS** ({actual_result})\n"
+                            win_loss_msg = f"📊 **LAST RESULT**: ❌ **LOSS**\n"
                             current_bet_multiplier *= 3
 
-                    # ၂။ Match အသစ်အတွက် BIG/SMALL ခန့်မှန်းခြင်း
                     next_pred = random.choice(["BIG", "SMALL"])
                     
                     msg = (
@@ -71,12 +71,12 @@ async def auto_prediction_worker(app: Application):
         except Exception as e:
             print(f"Worker Error: {e}")
             
-        await asyncio.sleep(5) # စက္ကန့်အနည်းငယ်တိုင်း အချိန်စစ်ပေးမည်
+        await asyncio.sleep(2) # အချိန်စစ်ပေးရန် ၂ စက္ကန့်ခြား ခေါ်မည်
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     active_chats.add(chat_id)
-    await update.message.reply_text("✅ VIP Predictor စတင်ပါပြီ! စက္ကန့် ၃၀ တိုင်း Match အသစ်၊ Win/Loss နှင့် Bet Multipliers များ တက်လာပါတော့မည်။")
+    await update.message.reply_text("✅ WinGo 30S Predictor စတင်ပါပြီ! စက္ကန့် ၃၀ တိုင်း Match Period အမှန်ဖြင့် ပို့ပေးပါတော့မည်။")
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -102,4 +102,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+        
