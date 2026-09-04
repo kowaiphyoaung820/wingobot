@@ -29,31 +29,17 @@ async def auto_prediction_worker(app: Application):
     while True:
         try:
             if active_chats:
-                # CK Lottery 17-Digit Period Format (YYYYMMDD10005XXXX)
                 now = datetime.now()
                 seconds_today = now.hour * 3600 + now.minute * 60 + now.second
                 period_index = (seconds_today // 30) + 1
                 current_match = f"{now.strftime('%Y%m%d')}10005{period_index:04d}"
                 
-                # စက္ကန့် ၃၀ တိုင်း Match အသစ်အတွက် ပို့ပေးမည်
                 if current_match != last_match:
-                    win_loss_msg = ""
-                    
-                    if last_pred and last_match:
-                        # Simulation: Correct logic tracking
-                        is_win = random.choice([True, False])
-                        if is_win:
-                            win_loss_msg = f"📊 **LAST RESULT**: ✅ **WIN**\n"
-                            current_bet_multiplier = 1
-                        else:
-                            win_loss_msg = f"📊 **LAST RESULT**: ❌ **LOSS**\n"
-                            current_bet_multiplier *= 3
-
                     next_pred = random.choice(["BIG", "SMALL"])
                     
+                    # Sticker မလိုဘဲ သန့်ရှင်း သပ်ရပ်သော Format
                     msg = (
-                        f"{win_loss_msg}"
-                        f"🔥 **WIN GO 30S PREDICTION** 🔥\n\n"
+                        f"⚡ **🎯⚡ 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮🔥** ⚡\n\n"
                         f"🎯 **MATCH** : `{current_match}`\n"
                         f"📍 **BUY**   : **{next_pred}**\n"
                         f"💵 **BET**   : **{current_bet_multiplier} x**"
@@ -76,13 +62,18 @@ async def auto_prediction_worker(app: Application):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     active_chats.add(chat_id)
-    await update.message.reply_text("✅ WinGo 30S Predictor စတင်ပါပြီ!")
+    
+    welcome_msg = (
+        "မင်္ဂလာပါ 🤖ck bot🤖မှကြိုဆိုပါတယ်\n\n"
+        "🎯 WinGo 30 Seconds ⏱️ စတင်ပါပြီ"
+    )
+    await update.message.reply_text(welcome_msg)
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id in active_chats:
         active_chats.remove(chat_id)
-    await update.message.reply_text("⛔ Bot ရပ်တန့်လိုက်ပါပြီ။")
+    await update.message.reply_text("⛔⚡ 𝘾𝙆 𝘽𝙊𝙏 ရပ်တန့်လိုက်ပါပြီ 🔒🚫။")
 
 def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
