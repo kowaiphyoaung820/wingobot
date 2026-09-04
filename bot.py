@@ -168,6 +168,18 @@ def main():
     print("🤖 VIP Bot Started...")
     app.run_polling()
 
+import os
+import threading
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    server.serve_forever()
+
+# Start dummy server in a background thread for Render
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
 if __name__ == "__main__":
     main()
-
+    
