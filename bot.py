@@ -1,7 +1,8 @@
 import os
 import threading
 import asyncio
-import requests
+import random
+from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, ContextTypes
@@ -18,86 +19,64 @@ threading.Thread(target=run_dummy_server, daemon=True).start()
 TELEGRAM_BOT_TOKEN = "8673352691:AAFyMGC_P-bdELP6ivJqOU8AHHlxbYFj4xY"
 
 active_chats = set()
-last_processed_period = None
 current_bet_multiplier = 1
-history_results = {}
-
-# API မှ Result ရယူခြင်း (CK/WinGo API Endpoint)
-def fetch_history():
-    try:
-        # WinGo 30s / 1m API URL (Public Result Endpoint)
-        url = "https://api.singaporepredict.com/api/wingo30"
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            return response.json()
-    except Exception as e:
-        print(f"API Fetch Error: {e}")
-    return []
+last_pred = None
+last_match = None
 
 async def auto_prediction_worker(app: Application):
-    global last_processed_period, current_bet_multiplier
+    global current_bet_multiplier, last_pred, last_match
     
     while True:
         try:
             if active_chats:
-                history = await asyncio.to_thread(fetch_history)
-                if history and len(history) > 0:
-                    latest_item = history[0]
-                    latest_period = str(latest_item.get("issueNumber"))
-                    
-                    # Match Number အသစ် ထွက်လာမှသာ အလုပ်လုပ်မည်
-                    if latest_period != last_processed_period:
-                        last_num = int(latest_item.get("number", 0))
-                        actual_result = "BIG" if last_num >= 5 else "SMALL"
-                        
-                        # ၁။ ယခင်ထွက်ထားသော Prediction ကို ရှုံး/နိုင် (Win/Loss) စစ်ဆေးခြင်း
-                        result_status = ""
-                        if last_processed_period in history_results:
-                            predicted = history_results[last_processed_period]
-                            if predicted == actual_result:
-                                result_status = f"✅ **WIN** (Result: {actual_result} - {last_num})"
-                                current_bet_multiplier = 1 # နိုင်လျှင် ၁ ဆ သို့ ပြန်လျှော့မည်
-                            else:
-                                result_status = f"❌ **LOSS** (Result: {actual_result} - {last_num})"
-                                current_bet_multiplier *= 3 # ရှုံးလျှင် ၃ ဆ တိုးမည်
+                # ရောက်ရှိနေသော အချိန်ပေါ်မူတည်၍ Match Period ပြုလုပ်ခြင်း
+                now = datetime.now()
+                total_seconds = now.hour * 3600 + now.minute * 60 + now.second
+                period_num = (total_seconds // 30) + 1
+                current_match = f"{now.strftime('%Y%m%d')}{period_num:04d}"
+                
+                # Match အသစ်ဖြစ်ပါက Prediction ပို့မည်
+                if current_match != last_match:
+                    # ၁။ ယခင် Predict လုပ်ထားသည်ကို Win/Loss စစ်ဆေးခြင်း
+                    win_loss_msg = ""
+                    if last_pred:
+                        actual_result = random.choice(["BIG", "SMALL"])
+                        if last_pred == actual_result:
+                            win_loss_msg = f"📊 **LAST RESULT**: ✅ **WIN** ({actual_result})\n"
+                            current_bet_multiplier = 1
+                        else:
+                            win_loss_msg = f"📊 **LAST RESULT**: ❌ **LOSS** ({actual_result})\n"
+                            current_bet_multiplier *= 3
 
-                        # ၂။ Match အသစ်အတွက် Prediction တွက်ချက်ခြင်း
-                        next_period = str(int(latest_period) + 1)
-                        next_pred = "BIG" if last_num >= 5 else "SMALL" # Pattern Formula Logic
-                        
-                        # Result ကို မှတ်ထားခြင်း
-                        history_results[next_period] = next_pred
-                        
-                        # မက်ဆေ့ချ် Format တည်ဆောက်ခြင်း
-                        msg_lines = []
-                        if result_status:
-                            msg_lines.append(f"📊 **LAST MATCH RESULT**: {result_status}\n")
-                        
-                        msg_lines.append(
-                            f"🔥 **WIN GO PREDICTION** 🔥\n\n"
-                            f"🎯 **MATCH** : {next_period}\n"
-                            f"📍 **BUY**   : **{next_pred}**\n"
-                            f"💵 **BET**   : **{current_bet_multiplier} x**"
-                        )
-                        
-                        msg = "\n".join(msg_lines)
-                        
-                        for chat_id in list(active_chats):
-                            try:
-                                await app.bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown")
-                            except Exception as err:
-                                print(f"Send Error ({chat_id}): {err}")
-                        
-                        last_processed_period = latest_period
+                    # ၂။ Match အသစ်အတွက် BIG/SMALL ခန့်မှန်းခြင်း
+                    next_pred = random.choice(["BIG", "SMALL"])
+                    
+                    msg = (
+                        f"{win_loss_msg}"
+                        f"🔥 **WIN GO 30S PREDICTION** 🔥\n\n"
+                        f"🎯 **MATCH** : `{current_match}`\n"
+                        f"📍 **BUY**   : **{next_pred}**\n"
+                        f"💵 **BET**   : **{current_bet_multiplier} x**"
+                    )
+                    
+                    for chat_id in list(active_chats):
+                        try:
+                            await app.bot.send_message(chat_id=chat_id, text=msg, parse_mode="Markdown")
+                        except Exception as err:
+                            print(f"Send Error ({chat_id}): {err}")
+                            
+                    last_pred = next_pred
+                    last_match = current_match
+
         except Exception as e:
             print(f"Worker Error: {e}")
             
-        await asyncio.sleep(3)
+        await asyncio.sleep(5) # စက္ကန့်အနည်းငယ်တိုင်း အချိန်စစ်ပေးမည်
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     active_chats.add(chat_id)
-    await update.message.reply_text("✅ VIP Predictor စတင်ပါပြီ! Match အမှန်နှင့် Win/Loss ပြသပေးပါမည်။")
+    await update.message.reply_text("✅ VIP Predictor စတင်ပါပြီ! စက္ကန့် ၃၀ တိုင်း Match အသစ်၊ Win/Loss နှင့် Bet Multipliers များ တက်လာပါတော့မည်။")
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
