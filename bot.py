@@ -37,12 +37,13 @@ async def auto_prediction_worker(app: Application):
                 if current_match != last_match:
                     next_pred = random.choice(["𝘽𝙄𝙂", "𝙎𝙈𝘼𝙇𝙇"])
                     
-                    # Sticker မလိုဘဲ သန့်ရှင်း သပ်ရပ်သော Format
+                    # Syntax Error များကို ပြင်ဆင်ထားသော Format
                     msg = (
-                        f⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
+                        f"⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
                         f"🎯 𝐌𝐀𝐓𝐂𝐇  ;  `{current_match}`\n"
                         f"📍 𝐁𝐔𝐘        ;  **{next_pred}**\n"
                         f"💵 𝐁𝐄𝐓        ;  **{current_bet_multiplier} x**"
+                    )
                     
                     for chat_id in list(active_chats):
                         try:
