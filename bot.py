@@ -35,13 +35,13 @@ async def auto_prediction_worker(app: Application):
                 current_match = f"{now.strftime('%Y%m%d')}10005{period_index:04d}"
                 
                 if current_match != last_match:
-                    next_pred = random.choice(["BIG", "SMALL"])
+                    next_pred = random.choice(["𝘽𝙄𝙂", "𝙎𝙈𝘼𝙇𝙇"])
                     
                     # Sticker မလိုဘဲ သန့်ရှင်း သပ်ရပ်သော Format
                     msg = (
-                        f"⚡ **🎯⚡ 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮🔥** ⚡\n\n"
-                        f"🎯 **MATCH** : `{current_match}`\n"
-                        f"📍 **BUY**   : **{next_pred}**\n"
+                        f"⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
+                        f"📈 **MATCH** : `{current_match}`\n"
+                        f"🎁 **BUY**   : **{next_pred}**\n"
                         f"💵 **BET**   : **{current_bet_multiplier} x**"
                     )
                     
@@ -64,8 +64,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     active_chats.add(chat_id)
     
     welcome_msg = (
-        "မင်္ဂလာပါ 🤖ck bot🤖မှကြိုဆိုပါတယ်\n\n"
-        "🎯 WinGo 30 Seconds ⏱️ စတင်ပါပြီ"
+        "မင်္ဂလာပါ 🤖𝘾𝙆 𝘽𝙊𝙏🤖မှကြိုဆိုပါတယ်\n\n"
+        "🎯 𝙒𝙞𝙣𝙂𝙤 30 𝙎𝙚𝙘𝙤𝙣𝙙𝙨 ⏱️ စတင်ပါပြီ"
     )
     await update.message.reply_text(welcome_msg)
 
