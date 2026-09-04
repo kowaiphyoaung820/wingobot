@@ -1,102 +1,53 @@
+import os
+import threading
 import asyncio
-import hashlib
-import json
-import random
-import time
 import requests
-import urllib3
-from telegram import BotCommand, Update
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from telegram import Update, BotCommand
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# Render Free Tier Port Error မပြစေရန် Dummy HTTP Server ကို အရင်ဆုံး စတင်ခြင်း
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    server.serve_forever()
 
+threading.Thread(target=run_dummy_server, daemon=True).start()
+
+# Bot Token & Configuration
 TELEGRAM_BOT_TOKEN = "8673352691:AAFyMGC_P-bdELP6ivJqOU8AHHlxbYFj4xY"
-WINGO_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOiIxNzg2MDMwODYzIiwibmJmIjoiMTc4NjAzMDg2MyIsImV4cGlyYXRpb24iOiI4LzYvMjAyNiAxMDo0MTowMyBQTSIsIlVzZXJJZCI6IjU4NjkyMyJ9.XLvoZF6-VmGtfPX7M426I9S2-KbNTbls4sE3XZXtE_E"
-
-API_BASE = "https://ckygjf6r.com/api/webapi/"
-TYPE_ID = 30
 
 active_chats = set()
 last_processed_period = None
-history_results = {}
 current_bet_multiplier = 1
-
-def generate_signature(data):
-    sorted_data = {k: data[k] for k in sorted(data.keys())}
-    json_str = json.dumps(sorted_data, separators=(',', ':'))
-    return hashlib.md5(json_str.encode('utf-8')).hexdigest().upper()
-
-def make_payload(extra={}):
-    random_hex = "".join([random.choice("0123456789abcdef") for _ in range(16)])
-    payload = {
-        "language": 0,
-        "random": random_hex,
-        **extra
-    }
-    payload["signature"] = generate_signature(payload)
-    payload["timestamp"] = int(time.time())
-    return payload
+history_results = {}
 
 def fetch_history():
-    headers = {
-        "Content-Type": "application/json; charset=UTF-8",
-        "Authorization": f"Bearer {WINGO_TOKEN}",
-        "Ar-Origin": "https://www.cklottery.club",
-        "User-Agent": "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
-    }
     try:
-        res = requests.post(
-            API_BASE + "GetNoaverageEmerdList",
-            json=make_payload({"pageSize": 30, "pageNo": 1, "typeId": TYPE_ID}),
-            headers=headers,
-            timeout=8,
-            verify=False
-        )
-        if res.status_code == 200:
-            data = res.json()
-            if data.get("code") == 0:
-                return data.get("data", {}).get("list", [])
+        url = "https://api.singaporepredict.com/api/wingo30"  # မိမိအသုံးပြုသော API URL ထည့်ရန်
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
     except Exception as e:
-        print(f"API Fetch Error: {e}")
+        print(f"API Error: {e}")
     return []
 
 def calculate_prediction(history):
-    if len(history) < 15:
+    if not history:
         return None
+    latest = history[0]
+    period = str(latest.get("issueNumber"))
+    last_num = int(latest.get("number", 0))
     
-    numbers = [int(x.get("number", 0)) for x in history]
-    bs_list = ["BIG" if n >= 5 else "SMALL" for n in numbers]
-    
-    streak_count = 1
-    for i in range(len(bs_list) - 1):
-        if bs_list[i] == bs_list[i+1]:
-            streak_count += 1
-        else:
-            break
-
-    if streak_count >= 3:
-        raw_pred = bs_list[0]
-    else:
-        score_b = 0.0
-        score_s = 0.0
-        weights = [3.0, 2.5, 2.0, 1.5, 1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
-        
-        for idx, bs in enumerate(bs_list[:10]):
-            if bs == "BIG":
-                score_b += weights[idx]
-            else:
-                score_s += weights[idx]
-                
-        raw_pred = "BIG" if score_b >= score_s else "SMALL"
-        
-    current_issue = int(history[0].get("issueNumber"))
-    next_issue = str(current_issue + 1)
+    # Prediction Logic
+    raw_pred = "BIG" if last_num >= 5 else "SMALL"
+    next_period = str(int(period) + 1)
     
     return {
-        "current_period": str(current_issue),
-        "next_period": next_issue,
-        "last_num": history[0].get("number"),
-        "raw_pred": raw_pred
+        "current_period": period,
+        "next_period": next_period,
+        "raw_pred": raw_pred,
+        "last_num": last_num
     }
 
 async def auto_prediction_worker(app: Application):
@@ -125,9 +76,9 @@ async def auto_prediction_worker(app: Application):
                             
                             msg = (
                                 f"🔥 **WIN GO 30S** 🔥\n\n"
-                                f"🏀 **MATCH**   ;   `{res['next_period'][-3:]}`\n\n"
-                                f"🔮 **BUY**     ;   **{res['raw_pred']}**\n\n"
-                                f"💲 **BET**     ;   **{current_bet_multiplier} x**"
+                                f"🎯 **MATCH** : {res['next_period'][-3:]}\n"
+                                f"📍 **BUY**   : **{res['raw_pred']}**\n"
+                                f"💵 **BET**   : **{current_bet_multiplier} x**"
                             )
                             
                             for chat_id in list(active_chats):
@@ -145,14 +96,17 @@ async def auto_prediction_worker(app: Application):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     active_chats.add(chat_id)
+    await update.message.reply_text("VIP Bot Started! Prediction များ စတင်ပေးပို့ပါတော့မည်။")
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     if chat_id in active_chats:
         active_chats.remove(chat_id)
+    await update.message.reply_text("Bot ကို ရပ်တန့်လိုက်ပါပြီ။")
 
 def main():
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
+    
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("stop", stop))
     
@@ -168,18 +122,6 @@ def main():
     print("🤖 VIP Bot Started...")
     app.run_polling()
 
-import os
-import threading
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-
-def run_dummy_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
-    server.serve_forever()
-
-# Start dummy server in a background thread for Render
-threading.Thread(target=run_dummy_server, daemon=True).start()
-
 if __name__ == "__main__":
     main()
-    
+        
