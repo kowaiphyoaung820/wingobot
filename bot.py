@@ -2,6 +2,7 @@ import os
 import threading
 import asyncio
 import random
+import requests
 from datetime import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from telegram import Update, BotCommand
@@ -23,6 +24,17 @@ current_bet_multiplier = 1
 last_pred = None
 last_match = None
 
+# Game Result ရယူရန် Function
+def fetch_game_result(period):
+    try:
+        # သင့် ဂိမ်း API Link ရှိပါက ဤနေရာတွင် ထည့်သွင်းနိုင်ပါသည်
+        # response = requests.get(f"YOUR_GAME_API_URL?period={period}", timeout=5)
+        # return response.json().get("result") # "BIG" သို့မဟုတ် "SMALL"
+        return None
+    except Exception as e:
+        print(f"API Error: {e}")
+        return None
+
 async def auto_prediction_worker(app: Application):
     global current_bet_multiplier, last_pred, last_match
     
@@ -35,9 +47,21 @@ async def auto_prediction_worker(app: Application):
                 current_match = f"{now.strftime('%Y%m%d')}10005{period_index:04d}"
                 
                 if current_match != last_match:
+                    # ယခင် Period အတွက် Win/Loss စစ်ဆေးခြင်း
+                    if last_match and last_pred:
+                        actual_result = fetch_game_result(last_match)
+                        
+                        if actual_result:
+                            if last_pred == actual_result: # နိုင်လျှင် 1x သို့ ပြန်စမည်
+                                current_bet_multiplier = 1
+                            else: # ရှုံးလျှင် 3 ဆ တိုးမည် (1x -> 3x -> 9x -> 27x -> 81x)
+                                current_bet_multiplier *= 3
+                        else:
+                            # API မရှိပါက ယာယီ Random / Simulation Logic အဖြစ် အသုံးပြုရန်
+                            pass
+
                     next_pred = random.choice(["𝘽𝙄𝙂", "𝙎𝙈𝘼𝙇𝙇"])
                     
-                    # Syntax Error များကို ပြင်ဆင်ထားသော Format
                     msg = (
                         f"⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
                         f"🎯 𝐌𝐀𝐓𝐂𝐇  ;  `{current_match}`\n"
@@ -51,7 +75,7 @@ async def auto_prediction_worker(app: Application):
                         except Exception as err:
                             print(f"Send Error ({chat_id}): {err}")
                             
-                    last_pred = next_pred
+                    last_pred = "BIG" if "𝘽𝙄𝙂" in next_pred else "SMALL"
                     last_match = current_match
 
         except Exception as e:
