@@ -16,8 +16,8 @@ def run_dummy_server():
 
 threading.Thread(target=run_dummy_server, daemon=True).start()
 
-# Bot Token (Render Environment Variable မှ ရယူရန်)
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN_HERE")
+# သင့် Telegram Bot Token
+TELEGRAM_BOT_TOKEN = "8673352691:AAFyMGC_P-bdELP6ivJqOU8AHHlxbYFj4xY"
 
 active_chats = set()
 current_bet_multiplier = 1
@@ -32,7 +32,7 @@ def fetch_game_result(period):
     try:
         # API ချိတ်ဆက်လိုပါက အောက်ပါ လိုင်းများကို Un-comment လုပ်ပါ:
         # response = requests.get(f"https://your-game-api.com/result?period={period}", timeout=5)
-        # return response.json().get("result") # "BIG" သို့မဟုတ် "SMALL" ပြန်ရပါမည်
+        # return response.json().get("result") # "BIG" သို့မဟုတ် "SMALL"
         
         return None
     except Exception as e:
@@ -67,7 +67,7 @@ async def auto_prediction_worker(app: Application):
                             else:
                                 current_bet_multiplier *= 3  # ရှုံးလျှင် 3 ဆ တိုးမည်
                         else:
-                            # API မရှိသေးပါက ယာယီ Simulation စစ်ဆေးခြင်း Logic (ရလဒ် အမှန်ရှိလျှင် အလိုအလျောက် ပိတ်သွားမည်)
+                            # API မရှိသေးပါက Simulation စစ်ဆေးခြင်း Logic
                             simulated_win = random.choice([True, False])
                             if simulated_win:
                                 current_bet_multiplier = 1
