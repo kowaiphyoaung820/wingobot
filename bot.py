@@ -25,15 +25,7 @@ last_pred = None
 last_match = None
 
 def fetch_game_result(period):
-    """
-    WinGo Game API မှ ရလဒ် ရယူသည့် Function ဖြစ်ပါသည်။
-    သင့် Game API Endpoint ရှိပါက ဤနေရာတွင် တိုက်ရိုက် ချိတ်ဆက်နိုင်ပါသည်။
-    """
     try:
-        # API ချိတ်ဆက်လိုပါက အောက်ပါ လိုင်းများကို Un-comment လုပ်ပါ:
-        # response = requests.get(f"https://your-game-api.com/result?period={period}", timeout=5)
-        # return response.json().get("result") # "BIG" သို့မဟုတ် "SMALL"
-        
         return None
     except Exception as e:
         print(f"API Error: {e}")
@@ -41,8 +33,6 @@ def fetch_game_result(period):
 
 async def auto_prediction_worker(app: Application):
     global current_bet_multiplier, last_pred, last_match
-    
-    base_bet_amount = 100  # အခြေခံ လောင်းကြေး ၁ ဆ = 100 KS
     
     while True:
         try:
@@ -63,11 +53,11 @@ async def auto_prediction_worker(app: Application):
                         
                         if actual_result:
                             if last_pred == actual_result:
-                                current_bet_multiplier = 1  # နိုင်လျှင် 1x သို့ ပြန်စမည်
+                                current_bet_multiplier = 1  # နိုင်လျှင် Level 1 သို့ ပြန်စမည်
                             else:
                                 current_bet_multiplier *= 3  # ရှုံးလျှင် 3 ဆ တိုးမည်
                         else:
-                            # API မရှိသေးပါက Simulation စစ်ဆေးခြင်း Logic
+                            # Simulation စစ်ဆေးခြင်း Logic
                             simulated_win = random.choice([True, False])
                             if simulated_win:
                                 current_bet_multiplier = 1
@@ -76,15 +66,14 @@ async def auto_prediction_worker(app: Application):
 
                     next_pred = random.choice(["𝘽𝙄𝙂", "𝙎𝙈𝘼𝙇𝙇"])
                     
-                    # BET နေရာတွင် Multiplier နှင့် အမောက်ကို တွဲရက် ပြသထားသည်
-                    calculated_amount = current_bet_multiplier * base_bet_amount
-                    bet_display = f"{current_bet_multiplier}x ({calculated_amount:,} KS)"
+                    # BET အစား ပြင်ဆင်ထားသော LEVEL စာသား
+                    level_display = f"{current_bet_multiplier}X"
                     
                     msg = (
                         f"⚡ **🎯 𝙒𝙄𝙉𝙂𝙊 𝟯𝟬𝙎 𝙋𝙍𝙀𝘿𝙄𝘾𝙏𝙄𝙊𝙉 🔮** ⚡\n\n"
                         f"🎯 𝐌𝐀𝐓𝐂𝐇  ;  `{current_match}`\n"
                         f"📍 𝐁𝐔𝐘        ;  **{next_pred}**\n"
-                        f"💵 𝐁𝐄𝐓        ;  **{bet_display}**"
+                        f"📊 𝐋𝐄𝐕𝐄𝐋     ;  **{level_display}**"
                     )
                     
                     for chat_id in list(active_chats):
